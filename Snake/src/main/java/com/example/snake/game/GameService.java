@@ -92,7 +92,6 @@ public class GameService {
     }
 
     public GameState getGameState() {
-        return gameState;
+        return null;
     }
-
 }
