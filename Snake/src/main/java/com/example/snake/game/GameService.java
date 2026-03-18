@@ -1,8 +1,11 @@
 package com.example.snake.game;
 
+import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 import java.util.ArrayList;
 import java.util.Random;
 
+@Service
 public class GameService {
     private static final int GRID_SIZE = 16;
     private final Random random = new Random();
@@ -24,6 +27,14 @@ public class GameService {
         gameState.setGameOver(false);
 
         spawnApple();
+    }
+
+    @Scheduled(fixedRate = 200)
+    public void tick() {
+        if (gameState == null || gameState.isGameOver()) {
+            return;
+        }
+        move();
     }
 
     public void move() {
@@ -56,13 +67,32 @@ public class GameService {
         checkCollision();
     }
 
+    public void setDirection(Direction newDirection) {
+
+        if (gameState == null || gameState.isGameOver()) {
+            return;
+        }
+
+        Direction current = gameState.getDirection();
+
+        if ((current == Direction.UP && newDirection == Direction.DOWN) ||
+                (current == Direction.DOWN && newDirection == Direction.UP) ||
+                (current == Direction.LEFT && newDirection == Direction.RIGHT) ||
+                (current == Direction.RIGHT && newDirection == Direction.LEFT)) {
+
+            return;
+        }
+
+        gameState.setDirection(newDirection);
+    }
+
     private void checkCollision() {
         Position head = getGameState().getSnake().get(0);
 
         int x = head.getX();
         int y = head.getY();
 
-        if (x < 0 || y < 0 || x >= GRID_SIZE) {
+        if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) {
             gameState.setGameOver(true);
             return;
         }
@@ -81,17 +111,19 @@ public class GameService {
 
     private void spawnApple() {
 
-        int x = random.nextInt(GRID_SIZE);
-        int y = random.nextInt(GRID_SIZE);
+        Position apple;
 
-        gameState.setApple(new Position(x, y));
+        do {
+            int x = random.nextInt(GRID_SIZE);
+            int y = random.nextInt(GRID_SIZE);
+            apple = new Position(x, y);
+        } while (gameState.getSnake().contains(apple));
 
-    }
+        gameState.setApple(apple);
 
-    private void grow() {
     }
 
     public GameState getGameState() {
-        return null;
+        return gameState;
     }
 }

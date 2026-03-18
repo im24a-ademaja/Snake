@@ -1,12 +1,11 @@
 package com.example.snake.controller;
 
+import com.example.snake.game.Direction;
 import com.example.snake.game.GameService;
 import com.example.snake.game.GameState;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/game")
 public class GameController {
@@ -29,5 +28,10 @@ public class GameController {
     @GetMapping("/state")
     public GameState getState() {
         return gameService.getGameState();
+    }
+
+    @PostMapping("/direction")
+    public void setDirection(@RequestParam Direction direction) {
+        gameService.setDirection(direction);
     }
 }
