@@ -12,12 +12,16 @@
 <br>
 <button onclick="startGame()">Start</button>
 
+<h2 id="score">Score: 0</h2>
+
 <pre id="gameState"></pre>
 
 <script src="app.js"></script>
 </body>
 <style>
     body {
+        background-color: dodgerblue;
+        color: white;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -25,7 +29,7 @@
     }
 
     canvas {
-        border: 2px solid black;
+        border: 2px solid white;
         margin: 20px;
     }
 </style>

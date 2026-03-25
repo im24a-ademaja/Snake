@@ -27,7 +27,13 @@ public class GameController {
 
     @GetMapping("/state")
     public GameState getState() {
-        return gameService.getGameState();
+        GameState state = gameService.getGameState();
+
+        if (state == null) {
+            return new GameState();
+        }
+
+        return state;
     }
 
     @PostMapping("/direction")

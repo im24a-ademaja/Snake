@@ -27,9 +27,11 @@ public class GameService {
         gameState.setGameOver(false);
 
         spawnApple();
+
+        System.out.println("NEW GAME STARTED");
     }
 
-    @Scheduled(fixedRate = 200)
+    @Scheduled(fixedRate = 150)
     public void tick() {
         if (gameState == null || gameState.isGameOver()) {
             return;
