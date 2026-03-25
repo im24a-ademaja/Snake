@@ -132,7 +132,7 @@ function showGameOver(score) {
     overlay.innerHTML = `
         <h1>GAME OVER</h1>
         <p>Score: ${score}</p>
-        <input id="playerName" placeholder="Dein Name" />
+        <input id="playerName" placeholder="Username" />
         <button onclick="saveScore(${score})">Save Score</button>
         <button onclick="restartGame()">Start</button>
         <div id="leaderboard"></div>
