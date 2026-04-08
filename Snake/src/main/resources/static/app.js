@@ -85,25 +85,41 @@ function draw(state) {
 function showGameOver(score) {
     const overlay = document.createElement("div");
 
-    overlay.innerHTML = `
-        <div style="
-            position:fixed;
-            top:50%;
-            left:50%;
-            transform:translate(-50%, -50%);
-            background:coral;
-            padding:20px;
-            border:2px solid white;
-            text-align:center;
-            z-index:999;
+overlay.innerHTML = `
+    <div style="
+        position:fixed;
+        top:50%;
+        left:50%;
+        transform:translate(-50%, -50%);
+        background:coral;
+        padding:20px;
+        border:2px solid white;
+        text-align:center;
+        z-index:999;
+        font-family: 'Poppins', sans-serif;
+    ">
+        <h1 style="
+            font-family: 'Press Start 2P', cursive;
+            color:white;
+            text-shadow: 2px 2px black;
         ">
-            <h1>GAME OVER</h1>
-            <p>Score: ${score}</p>
+            GAME OVER
+        </h1>
 
-            <input id="playerName" placeholder="Your Name"
-            style="background:coral; border:2px solid white;"/>
+        <p>Score: ${score}</p>
 
-            <br/><br/>
+        <input
+            id="playerName"
+            placeholder="Your Name"
+            style="
+                background: coral;
+                border: 2px solid white;
+                color: white;
+                font-family: 'Poppins', sans-serif;
+            "
+        />
+
+        <br/><br/>
 
             <button onclick="saveScore(${score})"
             style="background:coral; color:white; padding:10px; border:2px solid white; border-radius:5px; cursor: pointer;">
