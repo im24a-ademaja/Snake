@@ -6,7 +6,7 @@ const ctx = canvas.getContext("2d");
 const gridSize = 16;
 const tileSize = canvas.width / gridSize;
 
-let isRunning = false;
+let socket;
 let gameOverShown = false;
 
 async function startGame() {
@@ -15,7 +15,7 @@ async function startGame() {
             method: "POST"
         });
 
-        isRunning = true;
+        connectWebSocket();
         gameOverShown = false;
 
     } catch (err) {
@@ -23,49 +23,44 @@ async function startGame() {
     }
 }
 
-setInterval(async () => {
-    if (!isRunning) return;
+function connectWebSocket() {
+    socket = new WebSocket("ws://localhost:8080/ws/game");
 
-    try {
-        const response = await fetch(BASE_URL + "/state");
+    socket.onopen = () => {
+        console.log("WebSocket connected");
+    };
 
-        if (!response.ok) return;
+    socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
 
-        const state = await response.json();
+        if (msg.type === "GAME") {
+            draw(msg.data);
 
-        if (!state || !state.snake || state.snake.length === 0) return;
-
-        draw(state);
-
-        if (state.gameOver && !gameOverShown) {
-            gameOverShown = true;
-            isRunning = false;
-
-            showGameOver(state.score);
+            if (msg.data.gameOver && !gameOverShown) {
+                gameOverShown = true;
+                showGameOver(msg.data.score);
+            }
         }
 
-    } catch (err) {
-        console.warn("fetch error:", err);
-    }
-}, 200);
+        if (msg.type === "LEADERBOARD") {
+            renderLeaderboard(msg.data);
+        }
+    };
+
+    socket.onclose = () => {
+        console.log("WebSocket disconnected");
+    };
+
+    socket.onerror = (err) => {
+        console.error("WebSocket error:", err);
+    };
+}
 
 function draw(state) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     document.getElementById("score").innerText =
         "Score: " + state.score;
-
-    ctx.strokeStyle = "#ddd";
-    for (let x = 0; x < gridSize; x++) {
-        for (let y = 0; y < gridSize; y++) {
-            ctx.strokeRect(
-                x * tileSize,
-                y * tileSize,
-                tileSize,
-                tileSize
-            );
-        }
-    }
 
     state.snake.forEach((part, index) => {
         ctx.fillStyle = index === 0 ? "darkgreen" : "green";
@@ -87,6 +82,74 @@ function draw(state) {
     );
 }
 
+function showGameOver(score) {
+    const overlay = document.createElement("div");
+
+    overlay.innerHTML = `
+        <div style="
+            position:fixed;
+            top:50%;
+            left:50%;
+            transform:translate(-50%, -50%);
+            background:coral;
+            padding:20px;
+            border:2px solid white;
+            text-align:center;
+            z-index:999;
+        ">
+            <h1>GAME OVER</h1>
+            <p>Score: ${score}</p>
+
+            <input id="playerName" placeholder="Your Name"/>
+
+            <br/><br/>
+
+            <button onclick="saveScore(${score})"
+            style="background:coral; color:white; padding:10px; border:2px solid white; border-radius:5px; cursor: pointer;">
+            Save Score
+            </button>
+
+            <button onclick="restartGame()"
+            style="background:coral; color:white; padding:10px; border:2px solid white; border-radius:5px; cursor: pointer;">
+            Restart
+            </button>
+
+            <div id="leaderboard"></div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+}
+
+async function saveScore(score) {
+    const name = document.getElementById("playerName").value;
+
+    if (!name) {
+        alert("Bitte Name eingeben!");
+        return;
+    }
+
+    await fetch(`/score/save?name=${name}&points=${score}`, {
+        method: "POST"
+    });
+}
+
+function renderLeaderboard(scores) {
+    const board = document.getElementById("leaderboard");
+
+    if (!board) return;
+
+    board.innerHTML = "<h3>Top Scores</h3>";
+
+    scores.forEach((s, index) => {
+        board.innerHTML += `<p>${index + 1}. ${s.name}: ${s.points}</p>`;
+    });
+}
+
+function restartGame() {
+    location.reload();
+}
+
 document.addEventListener("keydown", (e) => {
     let direction;
 
@@ -98,61 +161,10 @@ document.addEventListener("keydown", (e) => {
     if (direction) {
         fetch(BASE_URL + "/direction?direction=" + direction, {
             method: "POST"
-        }).catch(err => console.warn("direction error:", err));
+        });
     }
 });
 
-async function saveScore(score) {
-    const name = document.getElementById("playerName").value;
-
-    await fetch(`/score/save?name=${name}&points=${score}`, {
-        method: "POST"
-    });
-
-    loadLeaderboard();
-}
-
-async function loadLeaderboard() {
-    const res = await fetch("/score/top");
-    const scores = await res.json();
-
-    const board = document.getElementById("leaderboard");
-
-    board.innerHTML = "<h3>Top Scores</h3>";
-
-    scores.forEach(s => {
-        board.innerHTML += `<p>${s.name}: ${s.points}</p>`;
-    });
-}
-
-function showGameOver(score) {
-    const overlay = document.createElement("div");
-
-    overlay.id = "gameOverScreen";
-    overlay.innerHTML = `
-        <h1>GAME OVER</h1>
-        <p>Score: ${score}</p>
-        <input id="playerName" placeholder="Username" />
-        <button onclick="saveScore(${score})">Save Score</button>
-        <button onclick="restartGame()">Start</button>
-        <div id="leaderboard"></div>
-    `;
-
-    overlay.style.position = "absolute";
-    overlay.style.top = "50%";
-    overlay.style.left = "50%";
-    overlay.style.transform = "translate(-50%, -50%)";
-    overlay.style.background = "dodgerblue";
-    overlay.style.padding = "20px";
-    overlay.style.border = "2px solid white";
-    overlay.style.textAlign = "center";
-
-    document.body.appendChild(overlay);
-}
-
-function restartGame() {
-    const overlay = document.getElementById("gameOverScreen");
-    if (overlay) overlay.remove();
-
+window.onload = () => {
     startGame();
-}
+};

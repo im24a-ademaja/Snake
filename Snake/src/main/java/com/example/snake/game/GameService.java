@@ -1,49 +1,54 @@
 package com.example.snake.game;
 
-import org.springframework.stereotype.Service;
+import com.example.snake.websocket.GameWebSocketHandler;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.Random;
 
 @Service
 public class GameService {
+
     private static final int GRID_SIZE = 16;
+
     private final Random random = new Random();
+    private final GameWebSocketHandler socketHandler;
+
     private GameState gameState;
+
+    public GameService(GameWebSocketHandler socketHandler) {
+        this.socketHandler = socketHandler;
+    }
 
     public void startGame() {
         gameState = new GameState();
 
         ArrayList<Position> snake = new ArrayList<>();
-
         snake.add(new Position(8, 8));
 
         gameState.setSnake(snake);
-
         gameState.setDirection(Direction.RIGHT);
-
         gameState.setScore(0);
-
         gameState.setGameOver(false);
 
         spawnApple();
 
-        System.out.println("NEW GAME STARTED");
+        socketHandler.broadcastRaw("GAME", gameState);
     }
 
-    @Scheduled(fixedRate = 150)
+    @Scheduled(fixedRate = 200)
     public void tick() {
         if (gameState == null || gameState.isGameOver()) {
             return;
         }
+
         move();
+
+        socketHandler.broadcastRaw("GAME", gameState);
     }
 
     public void move() {
-        if (gameState.isGameOver()) {
-            return;
-        }
-
         Position head = gameState.getSnake().get(0);
 
         int x = head.getX();
@@ -57,15 +62,19 @@ public class GameService {
         }
 
         Position newHead = new Position(x, y);
-
         gameState.getSnake().add(0, newHead);
 
-        if (x == gameState.getApple().getX() && y == gameState.getApple().getY()) {
+        if (x == gameState.getApple().getX() &&
+                y == gameState.getApple().getY()) {
+
             gameState.setScore(gameState.getScore() + 1);
             spawnApple();
+
         } else {
-            gameState.getSnake().remove(gameState.getSnake().size() - 1);
+            gameState.getSnake()
+                    .remove(gameState.getSnake().size() - 1);
         }
+
         checkCollision();
     }
 
@@ -81,7 +90,6 @@ public class GameService {
                 (current == Direction.DOWN && newDirection == Direction.UP) ||
                 (current == Direction.LEFT && newDirection == Direction.RIGHT) ||
                 (current == Direction.RIGHT && newDirection == Direction.LEFT)) {
-
             return;
         }
 
@@ -89,7 +97,7 @@ public class GameService {
     }
 
     private void checkCollision() {
-        Position head = getGameState().getSnake().get(0);
+        Position head = gameState.getSnake().get(0);
 
         int x = head.getX();
         int y = head.getY();
@@ -100,29 +108,20 @@ public class GameService {
         }
 
         for (int i = 1; i < gameState.getSnake().size(); i++) {
-
             Position body = gameState.getSnake().get(i);
 
             if (body.getX() == x && body.getY() == y) {
-
                 gameState.setGameOver(true);
-
+                return;
             }
         }
     }
 
     private void spawnApple() {
+        int x = random.nextInt(GRID_SIZE);
+        int y = random.nextInt(GRID_SIZE);
 
-        Position apple;
-
-        do {
-            int x = random.nextInt(GRID_SIZE);
-            int y = random.nextInt(GRID_SIZE);
-            apple = new Position(x, y);
-        } while (gameState.getSnake().contains(apple));
-
-        gameState.setApple(apple);
-
+        gameState.setApple(new Position(x, y));
     }
 
     public GameState getGameState() {

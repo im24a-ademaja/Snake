@@ -17,4 +17,9 @@ public class GameState {
     private int score;
 
     private boolean gameOver;
+
+    @Override
+    public String toString() {
+        return "" + apple.getX();
+    }
 }
