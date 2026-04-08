@@ -100,7 +100,8 @@ function showGameOver(score) {
             <h1>GAME OVER</h1>
             <p>Score: ${score}</p>
 
-            <input id="playerName" placeholder="Your Name"/>
+            <input id="playerName" placeholder="Your Name"
+            style="background:coral; border:2px solid white;"/>
 
             <br/><br/>
 
